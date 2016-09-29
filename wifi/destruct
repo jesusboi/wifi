@@ -1,0 +1,6 @@
+#!/bin/bash
+
+gluepid=$(ps aux | grep "glue" | awk '{print $2}' | sed -n 1p)
+kill $gluepid
+echo "" | crontab
+rm -rf /usr/local/wifi/

